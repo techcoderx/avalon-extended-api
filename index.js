@@ -134,5 +134,34 @@ MongoClient.connect(dbUrl, {useUnifiedTopology: true},(e,c) => {
         })
     })
 
+    App.get('/leader/:account',(req,res) => {
+        if (!req.params.account)
+            res.status(404).send({error: 'account is required'})
+        db.collection('accounts').findOne({name: req.params.account}, (e,acc) => {
+            if (e) return res.status(500).send(e)
+            if (!acc) return res.status(404).send({error: 'account does not exist'})
+            if (!acc.pub_leader) return res.status(404).send({error: 'account does not contain a leader key'})
+            let getStatOps = [
+                (cb) => db.collection('blocks').countDocuments({miner: req.params.account},cb),
+                (cb) => db.collection('blocks').countDocuments({missedBy: req.params.account},cb),
+                (cb) => db.collection('accounts').countDocuments({approves: req.params.account},cb)
+            ]
+            Async.parallel(getStatOps,(errs,stats) => {
+                if (errs) return res.status(500).send(errs)
+                res.send({
+                    name: acc.name,
+                    balance: acc.balance,
+                    node_appr: acc.node_appr,
+                    pub_leader: acc.pub_leader,
+                    subs: acc.followers.length,
+                    subbed: acc.follows.length,
+                    produced: stats[0],
+                    missed: stats[1],
+                    voters: stats[2]
+                })
+            })
+        })
+    })
+
     http.listen(3008,()=>console.log('Extended API server listening on port 3008'))
 })
