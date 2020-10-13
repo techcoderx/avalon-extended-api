@@ -70,5 +70,32 @@ MongoClient.connect(dbUrl, {useUnifiedTopology: true},(e,c) => {
         })
     })
 
+    App.get('/rank/:key',(req,res) => {
+        let sorting = {$sort: {}}
+        switch (req.params.key) {
+            case 'balance':
+                sorting.$sort.balance = -1
+                break
+            case 'subs':
+                sorting.$sort.subs = -1
+                break
+            default:
+                return res.status(400).send({error: 'invalid key'})
+        }
+        db.collection('accounts').aggregate([{
+            $project: {
+                _id: 0,
+                name: 1,
+                balance: 1,
+                subs: { $size: "$followers" },
+                subbed: { $size: "$follows" }
+            }
+        }, sorting, { $limit: 100 }]).toArray((e,r) => {
+            if (e)
+                return res.status(500).send(e)
+            res.send(r)
+        })
+    })
+
     http.listen(3008,()=>console.log('Extended API server listening on port 3008'))
 })
