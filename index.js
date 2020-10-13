@@ -1,4 +1,5 @@
 const MongoClient = require('mongodb')
+const Async = require('async')
 const Express = require('express')
 const CORS = require('cors')
 const App = Express()
@@ -72,17 +73,7 @@ MongoClient.connect(dbUrl, {useUnifiedTopology: true},(e,c) => {
 
     App.get('/rank/:key',(req,res) => {
         let sorting = {$sort: {}}
-        switch (req.params.key) {
-            case 'balance':
-                sorting.$sort.balance = -1
-                break
-            case 'subs':
-                sorting.$sort.subs = -1
-                break
-            default:
-                return res.status(400).send({error: 'invalid key'})
-        }
-        db.collection('accounts').aggregate([{
+        let projecting = {
             $project: {
                 _id: 0,
                 name: 1,
@@ -90,10 +81,56 @@ MongoClient.connect(dbUrl, {useUnifiedTopology: true},(e,c) => {
                 subs: { $size: "$followers" },
                 subbed: { $size: "$follows" }
             }
-        }, sorting, { $limit: 100 }]).toArray((e,r) => {
+        }
+        let matching = {$match:{}}
+        switch (req.params.key) {
+            case 'balance':
+                sorting.$sort.balance = -1
+                break
+            case 'subs':
+                sorting.$sort.subs = -1
+                break
+            case 'leaders':
+                projecting.$project.node_appr = 1
+                projecting.$project.pub_leader = 1
+                projecting.$project.hasVote = {
+                    $gt: ['$node_appr',0]
+                }
+                sorting.$sort.node_appr = -1
+                matching.$match.hasVote = true
+                matching.$match.pub_leader = { $exists: true }
+                break
+            default:
+                return res.status(400).send({error: 'invalid key'})
+        }
+
+        let aggregation = [projecting, sorting, {$limit: 100}]
+        if (req.params.key == 'leaders')
+            aggregation.push(matching)
+
+        db.collection('accounts').aggregate(aggregation).toArray((e,r) => {
             if (e)
                 return res.status(500).send(e)
-            res.send(r)
+            if (req.params.key != 'leaders')
+                return res.send(r)
+            else {
+                let getStatOps = []
+                for (let leader = 0; leader < r.length; leader++) {
+                    getStatOps.push((cb) => db.collection('blocks').countDocuments({miner: r[leader].name},cb))
+                    getStatOps.push((cb) => db.collection('blocks').countDocuments({missedBy: r[leader].name},cb))
+                    getStatOps.push((cb) => db.collection('accounts').countDocuments({approves: r[leader].name},cb))
+                }
+                Async.parallel(getStatOps,(everyError,everyResult) => {
+                    if (everyError) return res.status(500).send(everyError)
+                    for (let leader = 0; leader < r.length; leader++) {
+                        delete r[leader].hasVote
+                        r[leader].produced = everyResult[leader*3]
+                        r[leader].missed = everyResult[leader*3+1]
+                        r[leader].voters = everyResult[leader*3+2]
+                    }
+                    res.send(r)
+                })
+            }
         })
     })
 
