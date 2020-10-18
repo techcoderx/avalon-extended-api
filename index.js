@@ -9,7 +9,7 @@ const dbName = process.env.AVALON_EXT_DBNAME || 'avalon'
 const dbUrl = process.env.AVALON_EXT_DBURL || 'mongodb://localhost:27017'
 const port = parseInt(process.env.AVALON_EXT_PORT) || 3008
 
-if (isNaN(port) || port >= 65536 || port <= 1)
+if (isNaN(port) || port >= 65536 || port < 1)
     throw new Error('Invalid port')
 
 MongoClient.connect(dbUrl, {useUnifiedTopology: true},(e,c) => {
