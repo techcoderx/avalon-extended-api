@@ -5,8 +5,9 @@ const CORS = require('cors')
 const App = Express()
 const http = require('http').Server(App)
 
-const dbName = 'avalon'
-const dbUrl = 'mongodb://localhost:27017'
+const dbName = process.env.AVALON_EXT_DBNAME || 'avalon'
+const dbUrl = process.env.AVALON_EXT_DBURL || 'mongodb://localhost:27017'
+const port = process.env.AVALON_EXT_PORT || 3008
 
 MongoClient.connect(dbUrl, {useUnifiedTopology: true},(e,c) => {
     if (e) throw e
@@ -163,5 +164,5 @@ MongoClient.connect(dbUrl, {useUnifiedTopology: true},(e,c) => {
         })
     })
 
-    http.listen(3008,()=>console.log('Extended API server listening on port 3008'))
+    http.listen(port,()=>console.log('Extended API server listening on port '+port))
 })
