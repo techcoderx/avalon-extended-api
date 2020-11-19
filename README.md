@@ -23,7 +23,7 @@ Avalon extended API can be configured to connect to a different MongoDB instance
 ```
 AVALON_EXT_DBNAME=avalon
 AVALON_EXT_DBURL=mongodb://localhost:27017
-AVALON_EXT_PROT=3008
+AVALON_EXT_PORT=3008
 ```
 
 ## GET APIs
@@ -45,7 +45,8 @@ $ curl http://localhost:3008/tx/98b1844e4ebef38a71f8a29e37daadf8e4e6c7ae7d6c0116
     "sender": "dtube",
     "ts": 1601557504677,
     "hash": "98b1844e4ebef38a71f8a29e37daadf8e4e6c7ae7d6c0116ed556bb39f6590a9",
-    "signature": "34BHR6F5uPGWtnD6gcxV68jVuqiRxQJyq4LZLtvSQ5zEfFeL3Svhi76FEF359ziTP9dFhVQGeqemsoLQga1Z7jHP"
+    "signature": "34BHR6F5uPGWtnD6gcxV68jVuqiRxQJyq4LZLtvSQ5zEfFeL3Svhi76FEF359ziTP9dFhVQGeqemsoLQga1Z7jHP",
+    "includedInBlock": 10
 }
 ```
 
