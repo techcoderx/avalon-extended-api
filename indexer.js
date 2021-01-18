@@ -98,7 +98,11 @@ let indexer = {
                 $set: { processedBlocks: indexer.processedBlocks }
             },{ upsert: true },() => cb(null,true))
         })
-        parallel(ops,cb)
+        parallel(ops,() => {
+            indexer.updates.leaders = []
+            console.log('Live processed block #'+indexer.processedBlocks)
+            cb()
+        })
     },
     loadIndex: (cb) => {
         db.collection('leaders').find({},{}).toArray((e,leaders) => {
