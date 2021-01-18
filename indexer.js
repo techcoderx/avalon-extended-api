@@ -44,7 +44,7 @@ let indexer = {
             indexer.leaders[block.missedBy] = {
                 produced: 0,
                 missed: 0,
-                voters = 0
+                voters: 0
             }
             if (!indexer.updates.leaders.includes(block.missedBy))
                 indexer.updates.leaders.push(block.missedBy)
