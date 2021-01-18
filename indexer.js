@@ -20,6 +20,7 @@ let indexer = {
             db.collection('blocks').find({_id: { $gte: start, $lt: start+max_batch_blocks }}).toArray((e,blocks) => {
                 if (e) return rj(e)
                 if (blocks) indexer.blocks = blocks
+                console.log('LOADED ' + blocks.length + ' BLOCKS IN BATCH BEGINNING FROM BLOCK ' + start)
                 rs(indexer.blocks.shift())
             })
         else
