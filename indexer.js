@@ -58,11 +58,21 @@ let indexer = {
         for (let i = 0; i < block.txs.length; i++)
             if (block.txs[i].type === 1) {
                 // APPROVE_NODE_OWNER
+                if (!indexer.leaders[block.txs[i].data.target]) indexer.leaders[block.txs[i].data.target] = {
+                    produced: 0,
+                    missed: 0,
+                    voters: 0
+                }
                 indexer.leaders[block.txs[i].data.target].voters += 1
                 if (!indexer.updates.leaders.includes(block.txs[i].data.target))
                     indexer.updates.leaders.push(block.txs[i].data.target)
             } else if (block.txs[i].type === 2) {
                 // DISAPPROVE_NODE_OWNER
+                if (!indexer.leaders[block.txs[i].data.target]) indexer.leaders[block.txs[i].data.target] = {
+                    produced: 0,
+                    missed: 0,
+                    voters: 0
+                }
                 indexer.leaders[block.txs[i].data.target].voters -= 1
                 if (!indexer.updates.leaders.includes(block.txs[i].data.target))
                     indexer.updates.leaders.push(block.txs[i].data.target)
