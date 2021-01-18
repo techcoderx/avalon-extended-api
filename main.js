@@ -1,5 +1,4 @@
 const MongoClient = require('mongodb')
-const Async = require('async')
 const Express = require('express')
 const CORS = require('cors')
 const App = Express()
