@@ -4,6 +4,7 @@ const Express = require('express')
 const CORS = require('cors')
 const App = Express()
 const http = require('http').Server(App)
+const indexer = require('./indexer')
 
 const dbName = process.env.AVALON_EXT_DBNAME || 'avalon'
 const dbUrl = process.env.AVALON_EXT_DBURL || 'mongodb://localhost:27017'
@@ -180,4 +181,7 @@ MongoClient.connect(dbUrl, {useUnifiedTopology: true},(e,c) => {
     })
 
     http.listen(port,()=>console.log('Extended API server listening on port '+port))
+
+    // Indexers
+    indexer.loadIndex(() => indexer.buildIndex(indexer.processedBlocks+1,() => indexer.writeIndex(() => indexer.stream())))
 })
