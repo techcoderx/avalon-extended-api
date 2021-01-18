@@ -83,7 +83,7 @@ let indexer = {
     buildIndex: async (blockNum,cb) => {
         let block = await indexer.batchLoadBlocks(blockNum)
         if (!block)
-            cb()
+            return cb()
         indexer.processBlock(block)
         indexer.buildIndex(blockNum+1,cb)
     },
