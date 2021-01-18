@@ -131,22 +131,13 @@ MongoClient.connect(dbUrl, {useUnifiedTopology: true},(e,c) => {
             if (req.params.key != 'leaders')
                 return res.send(r)
             else {
-                let getStatOps = []
                 for (let leader = 0; leader < r.length; leader++) {
-                    getStatOps.push((cb) => db.collection('blocks').countDocuments({miner: r[leader].name},cb))
-                    getStatOps.push((cb) => db.collection('blocks').countDocuments({missedBy: r[leader].name},cb))
-                    getStatOps.push((cb) => db.collection('accounts').countDocuments({approves: r[leader].name},cb))
+                    delete r[leader].hasVote
+                    r[leader].produced = indexer.leaders[r[leader].name].produced
+                    r[leader].missed = indexer.leaders[r[leader].name].missed
+                    r[leader].voters = indexer.leaders[r[leader].name].voters
                 }
-                Async.parallel(getStatOps,(everyError,everyResult) => {
-                    if (everyError) return res.status(500).send(everyError)
-                    for (let leader = 0; leader < r.length; leader++) {
-                        delete r[leader].hasVote
-                        r[leader].produced = everyResult[leader*3]
-                        r[leader].missed = everyResult[leader*3+1]
-                        r[leader].voters = everyResult[leader*3+2]
-                    }
-                    res.send(r)
-                })
+                res.send(r)
             }
         })
     })
@@ -158,30 +149,22 @@ MongoClient.connect(dbUrl, {useUnifiedTopology: true},(e,c) => {
             if (e) return res.status(500).send(e)
             if (!acc) return res.status(404).send({error: 'account does not exist'})
             if (!acc.pub_leader) return res.status(404).send({error: 'account does not contain a leader key'})
-            let getStatOps = [
-                (cb) => db.collection('blocks').countDocuments({miner: req.params.account},cb),
-                (cb) => db.collection('blocks').countDocuments({missedBy: req.params.account},cb),
-                (cb) => db.collection('accounts').countDocuments({approves: req.params.account},cb)
-            ]
-            Async.parallel(getStatOps,(errs,stats) => {
-                if (errs) return res.status(500).send(errs)
-                res.send({
-                    name: acc.name,
-                    balance: acc.balance,
-                    node_appr: acc.node_appr,
-                    pub_leader: acc.pub_leader,
-                    subs: acc.followers.length,
-                    subbed: acc.follows.length,
-                    produced: stats[0],
-                    missed: stats[1],
-                    voters: stats[2]
-                })
+            res.send({
+                name: acc.name,
+                balance: acc.balance,
+                node_appr: acc.node_appr,
+                pub_leader: acc.pub_leader,
+                subs: acc.followers.length,
+                subbed: acc.follows.length,
+                produced: indexer.leaders[acc.name].produced,
+                missed: indexer.leaders[acc.name].missed,
+                voters: indexer.leaders[acc.name].voters
             })
         })
     })
 
-    http.listen(port,()=>console.log('Extended API server listening on port '+port))
-
-    // Indexers
-    indexer.loadIndex(() => indexer.buildIndex(indexer.processedBlocks+1,() => indexer.writeIndex(() => indexer.stream())))
+    indexer.loadIndex(() => indexer.buildIndex(indexer.processedBlocks+1,() => indexer.writeIndex(() => {
+        indexer.stream()
+        http.listen(port,()=>console.log('Extended API server listening on port '+port))
+    })))
 })
