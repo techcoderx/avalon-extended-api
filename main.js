@@ -20,18 +20,6 @@ MongoClient.connect(dbUrl, {useUnifiedTopology: true},(e,c) => {
 
     App.use(CORS())
 
-    App.get('/count',(req,res) => {
-        db.collection('blocks').findOne({},{ 
-            sort: { _id: -1 },
-            projection: { _id: 1 }
-        },(err, count) => {
-            if (err)
-                res.status(500).send(err)
-            else
-                res.send({ count: count._id })
-        })
-    })
-
     App.get('/tx/:txhash',(req,res) => {
         db.collection('blocks').findOne({ "txs.hash": req.params.txhash }, { projection: { txs: { $elemMatch: { hash: req.params.txhash}}}},(error,tx) => {
             if (error)
