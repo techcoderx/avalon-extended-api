@@ -1,3 +1,5 @@
+### **⚠️ This repository has been depreciated as the core APIs have been organized and all API methods contained here have been merged into the main repository. ⚠️**
+
 # avalon-extended-api
 
 Set of additional Avalon APIs that provide more information than its core APIs.
